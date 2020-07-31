@@ -1,0 +1,108 @@
+{
+	"kind": "AdmissionReview",
+	"apiVersion": "admission.k8s.io/v1beta1",
+	"request": {
+		"uid": "b057136c-7f1e-11ea-a26c-005056b19dd0",
+		"kind": {
+			"group": "extensions",
+			"version": "v1beta1",
+			"kind": "Deployment"
+		},
+		"resource": {
+			"group": "extensions",
+			"version": "v1beta1",
+			"resource": "deployments"
+		},
+		"namespace": "default",
+		"operation": "CREATE",
+		"userInfo": {
+			"username": "u-c5v7d247fm",
+			"groups": ["activedirectory_group://CN=Kibana-Viewer,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=Kibana-Viewer-UAT,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=rancher-messenger,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=rancher-boards,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=rancher-admin,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-dott,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-deploy,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=rancher-can-login-users,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-gci,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-bau,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-gci-read,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-dott-read,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-bau-read,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "activedirectory_group://CN=spin-bw,OU=ProdOpsGroups,OU=Groups,OU=Corporate,DC=corp,DC=diligent,DC=com", "system:authenticated"]
+		},
+		"object": {
+			"kind": "Deployment",
+			"apiVersion": "extensions/v1beta1",
+			"metadata": {
+				"name": "nginx",
+				"namespace": "default",
+				"creationTimestamp": null,
+				"labels": {
+					"app": "nginx"
+				},
+        "annotations": {
+          "releng.diligent.com/use-consul": "true"
+        }
+			},
+			"spec": {
+				"replicas": 1,
+				"selector": {
+					"matchLabels": {
+						"app": "nginx"
+					}
+				},
+				"template": {
+					"metadata": {
+						"creationTimestamp": null,
+						"labels": {
+							"app": "nginx"
+						}
+					},
+					"spec": {
+						"containers": [{
+								"name": "nginx01",
+                "env": [
+                  {"name": "CONSUL_DOMAIN", "value": "mydomain.com"},
+                  {"name": "ARTIFACTORY_HOST", "value": "container-arty"},
+                  {"name": "Metrics__StatsdServerName", "value": "container-StatsdServerName"}
+                ],
+								"image": "nginx:1",
+								"ports": [{
+										"name": "http",
+										"containerPort": 80,
+										"protocol": "TCP"
+									}
+								],
+								"resources": {},
+								"terminationMessagePath": "/dev/termination-log",
+								"terminationMessagePolicy": "File",
+								"imagePullPolicy": "IfNotPresent"
+							},
+              {
+								"name": "nginx02",
+								"image": "nginx:1",
+								"ports": [{
+										"name": "http",
+										"containerPort": 80,
+										"protocol": "TCP"
+									}
+								],
+								"resources": {},
+								"terminationMessagePath": "/dev/termination-log",
+								"terminationMessagePolicy": "File",
+								"imagePullPolicy": "IfNotPresent"
+							}
+
+						],
+						"restartPolicy": "Always",
+						"terminationGracePeriodSeconds": 30,
+						"dnsPolicy": "ClusterFirst",
+						"securityContext": {},
+						"schedulerName": "default-scheduler"
+					}
+				},
+				"strategy": {
+					"type": "RollingUpdate",
+					"rollingUpdate": {
+						"maxUnavailable": 1,
+						"maxSurge": 1
+					}
+				},
+				"revisionHistoryLimit": 2147483647,
+				"progressDeadlineSeconds": 2147483647
+			},
+			"status": {}
+		},
+		"oldObject": null,
+		"dryRun": false
+	}
+}
