@@ -1,0 +1,116 @@
+{
+	"kind": "AdmissionReview",
+	"apiVersion": "admission.k8s.io/v1beta1",
+	"request": {
+		"uid": "9e7f6563-3797-4a88-8e87-7e3d042ee50f",
+		"kind": {
+			"group": "",
+			"version": "v1",
+			"kind": "Pod"
+		},
+		"resource": {
+			"group": "",
+			"version": "v1",
+			"resource": "pods"
+		},
+		"requestKind": {
+			"group": "",
+			"version": "v1",
+			"kind": "Pod"
+		},
+		"requestResource": {
+			"group": "",
+			"version": "v1",
+			"resource": "pods"
+		},
+		"namespace": "consul",
+		"operation": "CREATE",
+		"userInfo": {
+			"username": "system:serviceaccount:kube-system:replicaset-controller",
+			"uid": "25c5e4d6-df49-4a7d-8eef-8d7e0dd2221c",
+			"groups": ["system:serviceaccounts", "system:serviceaccounts:kube-system", "system:authenticated"]
+		},
+		"object": {
+			"kind": "Pod",
+			"apiVersion": "v1",
+			"metadata": {
+				"generateName": "nginx-55bbb4f6f7-",
+				"creationTimestamp": null,
+				"labels": {
+					"app": "nginx",
+					"pod-template-hash": "55bbb4f6f7"
+				},
+				"annotations": {
+          "consul.diligent.com/enabled": "true"
+				},
+				"ownerReferences": [{
+						"apiVersion": "apps/v1",
+						"kind": "ReplicaSet",
+						"name": "nginx-55bbb4f6f7",
+						"uid": "df08ff0d-b07c-4ec2-8f9b-c0b511b1905c",
+						"controller": true,
+						"blockOwnerDeletion": true
+					}
+				]
+			},
+			"spec": {
+				"volumes": [{
+						"name": "default-token-vpmcp",
+						"secret": {
+							"secretName": "default-token-vpmcp"
+						}
+					}
+				],
+				"containers": [{
+						"name": "nginx01",
+						"image": "nginx",
+						"ports": [{
+								"name": "http",
+								"containerPort": 80,
+								"protocol": "TCP"
+							}
+						],
+						"resources": {},
+						"volumeMounts": [{
+								"name": "default-token-vpmcp",
+								"readOnly": true,
+								"mountPath": "/var/run/secrets/kubernetes.io/serviceaccount"
+							}
+						],
+						"terminationMessagePath": "/dev/termination-log",
+						"terminationMessagePolicy": "File",
+						"imagePullPolicy": "IfNotPresent"
+					}
+				],
+				"restartPolicy": "Always",
+				"terminationGracePeriodSeconds": 30,
+				"dnsPolicy": "ClusterFirst",
+				"serviceAccountName": "default",
+				"serviceAccount": "default",
+				"securityContext": {},
+				"schedulerName": "default-scheduler",
+				"tolerations": [{
+						"key": "node.kubernetes.io/not-ready",
+						"operator": "Exists",
+						"effect": "NoExecute",
+						"tolerationSeconds": 300
+					}, {
+						"key": "node.kubernetes.io/unreachable",
+						"operator": "Exists",
+						"effect": "NoExecute",
+						"tolerationSeconds": 300
+					}
+				],
+				"priority": 0,
+				"enableServiceLinks": true
+			},
+			"status": {}
+		},
+		"oldObject": null,
+		"dryRun": false,
+		"options": {
+			"kind": "CreateOptions",
+			"apiVersion": "meta.k8s.io/v1"
+		}
+	}
+}

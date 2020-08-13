@@ -18,57 +18,76 @@ import (
   log "github.com/inconshreveable/log15"
 )
 
+// Annotation required to trigger mutation.
+const anno = "consul.diligent.com/enabled"
+
 type Patch struct {
   Op  string        `json:"op"`
   Path string       `json:"path"`
   Value interface{} `json:"value,omitempty"`
 }
 
-// mutate injects data from Consul as environment variables into deployments.
+// mutate injects data from Consul as environment variables into pods.
 // It uses environment variable CONSUL_SITE to generate a Consul prefix of
 // "common/site/CONSUL_SITE/". Files in that prefix will be injected
-// as environment variables into deployments that has "releng.diligent.com/use-consul"
-// annotation set to "true".
+// as environment variables into pods that has `anno` annotation set to "true".
 func mutate(c *gin.Context) {
   // ar contains the AdmissionReview object sent by Kubernetes
   var ar *admV1b1.AdmissionReview
   c.BindJSON(&ar)
 
-  // deploy contains the Deployment object unmarshalled from AdmissionReview object
-  var deploy *appsV1.Deployment
-  json.Unmarshal(ar.Request.Object.Raw, &deploy)
+  // Skip mutation if AR kind is not a Pod
+  if ar.Request.Kind.Kind != "Pod" {
+    msg := "Not mutating, not Pod kind"
+    log.Info(msg)
+    resp := createResp([]Patch{}, msg)
+    returnResp(c, ar, resp)
+    return
+  }
 
-  // Only mutate deployment if annotation exist and set to "true"
-  var resp *admV1b1.AdmissionResponse
-  rAnno := "releng.diligent.com/use-consul"
-  if anno, ok := deploy.Annotations[rAnno]; ok && strings.ToLower(anno) == "true" {
-    message := fmt.Sprintf("Mutating deployment %s in %s namespace with Consul data", deploy.Name, deploy.Namespace)
-    log.Info(message)
+  ns := ar.Request.Namespace
+
+  // pod contains the Pod object unmarshalled from AdmissionReview object
+  var pod *coreV1.Pod
+  json.Unmarshal(ar.Request.Object.Raw, &pod)
+
+
+  // Only mutate pod if annotation exist and set to "true"
+  if anno, ok := pod.Annotations[anno]; ok && strings.ToLower(anno) == "true" {
+    msg := fmt.Sprintf("Mutating deployment %s in %s namespace with Consul data", deploy.Name, ns)
+    log.Info(msg)
 
     cEvars, err := getConsulData()
     if err != nil {
       log.Crit("Unable to fetch data from Consul")
+      panic(err)
     }
 
+    log.Info(fmt.Sprintf("CONSUL EVARS: %v", cEvars))
+
     patches := createPatch(deploy.Spec.Template.Spec.Containers, cEvars)
-    resp := createResp(patches, message)
-    resp.UID = ar.Request.UID
+    resp := createResp(patches, msg)
+    returnResp(c, ar, resp)
   } else {
-    message := fmt.Sprintf("Not mutating deployment %s in %s namespace, missing annotation", deploy.Name, deploy.Namespace)
-    log.Warn(message)
-    resp := createResp([]Patch{}, message)
-    resp.UID = ar.Request.UID
+    msg := fmt.Sprintf("Not mutating deployment %s in %s namespace, missing annotation", deploy.Name, deploy.Namespace)
+    log.Warn(msg)
+    resp := createResp([]Patch{}, msg)
+    returnResp(c, ar, resp)
   }
+}
+
+func returnResp(c *gin.Context, ar *admV1b1.AdmissionReview, resp *admV1b1.AdmissionResponse) {
+  resp.UID = ar.Request.UID
   ar.Response = resp
   respBody, _ := json.Marshal(ar)
   c.JSON(http.StatusOK, respBody)
 }
 
-func createResp(patches []Patch, message string) *admV1b1.AdmissionResponse {
+func createResp(patches []Patch, msg string) *admV1b1.AdmissionResponse {
   resp := admV1b1.AdmissionResponse{}
   resp.Allowed = true
   resp.Result = &metaV1.Status{
-    Message: message,
+    Message: msg,
   }
 
   if len(patches) > 0 {
@@ -142,7 +161,7 @@ func getConEvars(conEvars []coreV1.EnvVar, cEvars []coreV1.EnvVar) []coreV1.EnvV
   return eVars
 }
 
-// hasEvars returns whether an evar is in an evars list.
+// hasEvars returns true if evar v is in evars list.
 func hasEvar(cEvars []coreV1.EnvVar, v coreV1.EnvVar) bool {
   for _, cv := range cEvars {
     if cv.Name == v.Name {
